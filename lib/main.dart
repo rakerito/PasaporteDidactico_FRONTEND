@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/login_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const PasaporteDidacticoApp());
@@ -15,11 +15,10 @@ class PasaporteDidacticoApp extends StatelessWidget {
       title: 'Pasaporte Didáctico',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // TODO: ajustar colores según la paleta de tu diseño final
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF062345)),
         useMaterial3: true,
       ),
-      home: const LoginScreen(),
+      home: SplashScreen(),
     );
   }
 }
