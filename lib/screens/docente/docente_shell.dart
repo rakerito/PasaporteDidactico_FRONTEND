@@ -4,9 +4,9 @@ import '../../widgets/menu_inferior.dart';
 import 'docente_home_screen.dart';
 import 'sellos_docente_screen.dart';
 
-/// Contenedor único que mantiene todas las pantallas del docente
-/// creadas una sola vez (no se recargan al cambiar entre ellas),
-/// con una transición de volteo al cambiar de pestaña.
+/// Contenedor único que mantiene las pantallas del docente en memoria
+/// UNA VEZ QUE LAS VISITAS (no se cargan las 5 de golpe al entrar,
+/// solo la de Inicio; las demás se crean la primera vez que las abres).
 class DocenteShell extends StatefulWidget {
   const DocenteShell({super.key});
 
@@ -26,20 +26,43 @@ class _DocenteShellState extends State<DocenteShell> {
     "Configuración",
   ];
 
-  // Las 5 pantallas, creadas UNA sola vez aquí.
-  final List<Widget> _pantallas = const [
-    DocenteHomeScreen(),
-    SellosDocenteScreen(),
-    _PantallaProximamente(nombre: "Progreso"),
-    _PantallaProximamente(nombre: "Cursos"),
-    _PantallaProximamente(nombre: "Configuración"),
-  ];
+  // Empieza con solo el índice 0 (Inicio) "visitado" — las demás se crean después.
+  final Set<int> _visitadas = {0};
+  final List<Widget?> _cache = List<Widget?>.filled(5, null);
+
+  Widget _obtenerPantalla(int indice) {
+    if (_cache[indice] != null) return _cache[indice]!;
+
+    final Widget pantalla;
+    switch (indice) {
+      case 0:
+        pantalla = const DocenteHomeScreen();
+        break;
+      case 1:
+        pantalla = const SellosDocenteScreen();
+        break;
+      case 2:
+        pantalla = const _PantallaProximamente(nombre: "Progreso");
+        break;
+      case 3:
+        pantalla = const _PantallaProximamente(nombre: "Cursos");
+        break;
+      default:
+        pantalla = const _PantallaProximamente(nombre: "Configuración");
+    }
+
+    _cache[indice] = pantalla;
+    return pantalla;
+  }
 
   void _irAPantalla(String nombre) {
     setState(() => _menuAbierto = false);
     final nuevoIndice = _nombresPantallas.indexOf(nombre);
     if (nuevoIndice == -1 || nuevoIndice == _indiceActual) return;
-    setState(() => _indiceActual = nuevoIndice);
+    setState(() {
+      _visitadas.add(nuevoIndice);
+      _indiceActual = nuevoIndice;
+    });
   }
 
   @override
@@ -47,9 +70,17 @@ class _DocenteShellState extends State<DocenteShell> {
     return Scaffold(
       body: Stack(
         children: [
-          // TODO: aquí va la animación de "hojas de libro" cuando la retomemos.
-          // Por ahora, cambio directo sin efecto, para que la app funcione bien.
-          IndexedStack(index: _indiceActual, children: _pantallas),
+          IndexedStack(
+            index: _indiceActual,
+            // Las pantallas NO visitadas todavía son solo un SizedBox vacío
+            // (no gastan memoria ni hacen peticiones al backend hasta que las abras).
+            children: List.generate(
+              5,
+              (i) => _visitadas.contains(i)
+                  ? _obtenerPantalla(i)
+                  : const SizedBox.shrink(),
+            ),
+          ),
 
           Positioned(
             right: 20,

@@ -250,6 +250,7 @@ class _ModalDetalleSelloState extends State<_ModalDetalleSello> {
 
           if (requeridos.isNotEmpty) ...[
             const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
                   Icons.description_outlined,
@@ -257,9 +258,11 @@ class _ModalDetalleSelloState extends State<_ModalDetalleSello> {
                   color: Color(0xFF151B3D),
                 ),
                 SizedBox(width: 6),
-                Text(
-                  "Cursos requeridos para obtener constancia",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Text(
+                    "Cursos requeridos para obtener constancia",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),

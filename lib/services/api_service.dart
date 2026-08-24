@@ -10,7 +10,7 @@ class ApiService {
   // - Emulador Android: http://10.0.2.2:8000
   // - Celular físico en la misma WiFi: http://<IP-de-tu-PC>:8000
   // - iOS Simulator: http://localhost:8000
-  static const String baseUrl = "http://10.0.2.2:8000";
+  static const String baseUrl = "http://192.168.1.71:8000";
 
   Future<Map<String, dynamic>> login(String correo, String contrasena) async {
     final respuesta = await http.post(
