@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'dart:io';
 
 import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/menu_inferior.dart';
+import '../../widgets/boton_notificaciones.dart';
 import '../login_screen.dart';
 
 class ColoresDocente {
@@ -32,12 +36,12 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
   String _numeroUsuario = "";
   String _division = "";
   String? _fotoUrl;
+  int? _idDocente;
 
-  final int _sellosObtenidos = 8;
-  final int _cursosCompletados = 20;
-  final String _nivel = "Básico";
+  int _logrosObtenidos = 0;
+  int _cursosCompletados = 0;
+  String _nivel = "Básico";
 
-  // ===== Tamaño de la tarjeta: cámbialos aquí para agrandar/achicar todo junto =====
   static const double _cardWidth = 320;
   static const double _cardHeight = 670;
   static const double _cardTop = 135;
@@ -59,8 +63,21 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
         );
       }
 
-      final usuario = await _apiService.obtenerUsuario(idUsuario);
-      final docente = await _apiService.obtenerDocentePorUsuario(idUsuario);
+      // Pedimos usuario y docente AL MISMO TIEMPO, no uno tras otro
+      final resultados = await Future.wait([
+        _apiService.obtenerUsuario(idUsuario),
+        _apiService.obtenerDocentePorUsuario(idUsuario),
+      ]);
+      final usuario = resultados[0] as Map<String, dynamic>;
+      final docente = resultados[1] as Map<String, dynamic>?;
+
+      Map<String, dynamic>? estadisticas;
+      if (docente != null && docente["id_docente"] != null) {
+        // Esta sí depende del resultado anterior (necesita el id_docente), no se puede paralelizar
+        estadisticas = await _apiService.obtenerEstadisticasDocente(
+          docente["id_docente"],
+        );
+      }
 
       setState(() {
         _nombre = "${usuario["nombre"]} ${usuario["apellidos"]}";
@@ -69,6 +86,10 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
             docente?["division"] ??
             "Sin división asignada (no tiene perfil de docente)";
         _fotoUrl = docente?["foto_url"];
+        _idDocente = docente?["id_docente"];
+        _logrosObtenidos = estadisticas?["logros_obtenidos"] ?? 0;
+        _cursosCompletados = estadisticas?["cursos_completados"] ?? 0;
+        _nivel = estadisticas?["nivel"] ?? "Básico";
         _cargando = false;
       });
     } catch (e) {
@@ -76,6 +97,31 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
         _errorCarga = e.toString().replaceFirst("Exception: ", "");
         _cargando = false;
       });
+    }
+  }
+
+  Future<void> _cambiarFoto() async {
+    if (_idDocente == null) return;
+
+    final picker = ImagePicker();
+    final imagenSeleccionada = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (imagenSeleccionada == null) return;
+
+    try {
+      final nuevaUrl = await _apiService.subirFotoPerfil(
+        _idDocente!,
+        File(imagenSeleccionada.path),
+      );
+      setState(() => _fotoUrl = nuevaUrl);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("No se pudo subir la foto: $e")));
+      }
     }
   }
 
@@ -133,7 +179,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
       body: FondoApp(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // La tarjeta se centra sola según el ancho real de la pantalla
             final double anchoPantalla = constraints.maxWidth;
             final double cardLeft = (anchoPantalla - _cardWidth) / 2;
             final double cardBottom = _cardTop + _cardHeight;
@@ -144,7 +189,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // "No. pasaporte" — centrado en toda la pantalla, no en la tarjeta
                   const Positioned(
                     left: 0,
                     right: 0,
@@ -175,7 +219,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                     ),
                   ),
 
-                  // ===== Tarjeta blanca, centrada automáticamente =====
                   Positioned(
                     left: cardLeft,
                     top: _cardTop,
@@ -210,29 +253,56 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                     top: _cardTop + 135,
                     width: 90,
                     height: 136,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: (_fotoUrl == null || _fotoUrl!.isEmpty)
-                          ? Container(
-                              color: Colors.grey.shade300,
+                    child: GestureDetector(
+                      onTap: _cambiarFoto,
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              width: 90,
+                              height: 136,
+                              child: (_fotoUrl == null || _fotoUrl!.isEmpty)
+                                  ? Container(
+                                      color: Colors.grey.shade300,
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 60,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Image.network(
+                                      _fotoUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        color: Colors.grey.shade300,
+                                        child: const Icon(
+                                          Icons.person,
+                                          size: 60,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          Positioned(
+                            right: 4,
+                            bottom: 4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: ColoresDocente.textoOscuro,
+                                shape: BoxShape.circle,
+                              ),
                               child: const Icon(
-                                Icons.person,
-                                size: 60,
+                                Icons.camera_alt,
+                                size: 14,
                                 color: Colors.white,
                               ),
-                            )
-                          : Image.network(
-                              _fotoUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                color: Colors.grey.shade300,
-                                child: const Icon(
-                                  Icons.person,
-                                  size: 60,
-                                  color: Colors.white,
-                                ),
-                              ),
                             ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
@@ -251,31 +321,7 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: ColoresDocente.botonClaro,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(
-                                Icons.notifications,
-                                size: 19,
-                                color: Colors.white,
-                              ),
-                              SizedBox(width: 4),
-                              Icon(
-                                Icons.keyboard_arrow_down,
-                                size: 19,
-                                color: Colors.white,
-                              ),
-                            ],
-                          ),
-                        ),
+                        const BotonNotificaciones(),
                       ],
                     ),
                   ),
@@ -340,17 +386,12 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                           children: [
                             const Icon(
                               Icons.emoji_events,
-                              color: Color.from(
-                                alpha: 1,
-                                red: 0.122,
-                                green: 0.616,
-                                blue: 0.427,
-                              ),
+                              color: ColoresDocente.verdeAcento,
                               size: 28,
                             ),
                             const SizedBox(width: 6),
                             const Text(
-                              "Sellos\nobtenidos",
+                              "Logros\nobtenidos",
                               style: TextStyle(
                                 color: ColoresDocente.textoOscuro,
                                 fontSize: 14,
@@ -360,7 +401,7 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "$_sellosObtenidos",
+                          "$_logrosObtenidos",
                           style: const TextStyle(
                             color: ColoresDocente.textoOscuro,
                             fontWeight: FontWeight.bold,
@@ -381,12 +422,7 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                           children: [
                             const Icon(
                               Icons.menu_book,
-                              color: Color.from(
-                                alpha: 1,
-                                red: 0.122,
-                                green: 0.616,
-                                blue: 0.427,
-                              ),
+                              color: ColoresDocente.verdeAcento,
                               size: 28,
                             ),
                             const SizedBox(width: 6),
@@ -458,7 +494,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                     ),
                   ),
 
-                  // "Página 1" — debajo de la tarjeta, centrado en la pantalla completa
                   Positioned(
                     left: 0,
                     right: 0,
@@ -474,7 +509,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                     ),
                   ),
 
-                  // Botón circular que abre/cierra el menú inferior
                   Positioned(
                     left: cardLeft + _cardWidth - 40,
                     top: cardBottom + 25,
@@ -496,28 +530,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
                     ),
                   ),
 
-                  // Botón cerrar sesión, debajo de "Página 1"
-                  Positioned(
-                    left: -150,
-                    right: 0,
-                    top: cardBottom - 50,
-                    child: Center(
-                      child: TextButton.icon(
-                        onPressed: _cerrarSesion,
-                        icon: const Icon(
-                          Icons.logout,
-                          size: 18,
-                          color: ColoresDocente.textoOscuro,
-                        ),
-                        label: const Text(
-                          "Cerrar sesión",
-                          style: TextStyle(color: ColoresDocente.textoOscuro),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Menú inferior (aparece solo si _menuAbierto es true)
                   if (_menuAbierto)
                     Positioned(
                       left: 16,

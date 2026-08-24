@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -9,7 +10,7 @@ class ApiService {
   // - Emulador Android: http://10.0.2.2:8000
   // - Celular físico en la misma WiFi: http://<IP-de-tu-PC>:8000
   // - iOS Simulator: http://localhost:8000
-  static const String baseUrl = "http://192.168.100.73:8000";
+  static const String baseUrl = "http://10.0.2.2:8000";
 
   Future<Map<String, dynamic>> login(String correo, String contrasena) async {
     final respuesta = await http.post(
@@ -56,6 +57,81 @@ class ApiService {
     } else {
       throw Exception(datos["detail"] ?? "Error al obtener docente");
     }
+  }
+
+  Future<Map<String, dynamic>> obtenerEstadisticasDocente(int idDocente) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/docentes/$idDocente/estadisticas"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos;
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener estadísticas");
+    }
+  }
+
+  Future<Map<String, dynamic>> obtenerResumenNotificaciones() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/notificaciones/resumen"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    return jsonDecode(utf8.decode(respuesta.bodyBytes));
+  }
+
+  Future<List<dynamic>> obtenerNotificaciones() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/notificaciones"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    return datos["items"];
+  }
+
+  Future<String> subirFotoPerfil(int idDocente, File imagen) async {
+    final token = await AuthStorage.obtenerToken();
+    final uri = Uri.parse("$baseUrl/docentes/$idDocente/foto");
+
+    final request = http.MultipartRequest("POST", uri)
+      ..headers["Authorization"] = "Bearer $token"
+      ..files.add(await http.MultipartFile.fromPath("archivo", imagen.path));
+
+    final streamedResponse = await request.send();
+    final respuesta = await http.Response.fromStream(streamedResponse);
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+
+    if (respuesta.statusCode == 200) {
+      return datos["foto_url"];
+    } else {
+      throw Exception(datos["detail"] ?? "Error al subir la foto");
+    }
+  }
+
+  Future<void> marcarNotificacionLeida(
+    String origen,
+    int idNotificacion,
+  ) async {
+    final token = await AuthStorage.obtenerToken();
+    await http.post(
+      Uri.parse("$baseUrl/notificaciones/marcar-leida"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"origen": origen, "id_notificacion": idNotificacion}),
+    );
+  }
+
+  Future<void> vaciarNotificaciones() async {
+    final token = await AuthStorage.obtenerToken();
+    await http.delete(
+      Uri.parse("$baseUrl/notificaciones"),
+      headers: {"Authorization": "Bearer $token"},
+    );
   }
 
   // Ejemplo de cómo se verán las demás llamadas, ya con el token incluido
