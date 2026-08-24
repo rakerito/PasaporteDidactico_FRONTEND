@@ -7,7 +7,6 @@ import 'dart:io';
 import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
 import '../../widgets/fondo_app.dart';
-import '../../widgets/menu_inferior.dart';
 import '../../widgets/boton_notificaciones.dart';
 import '../login_screen.dart';
 
@@ -29,7 +28,6 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
   final _apiService = ApiService();
 
   bool _cargando = true;
-  bool _menuAbierto = false;
   String? _errorCarga;
 
   String _nombre = "";
@@ -175,380 +173,342 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
       );
     }
 
-    return Scaffold(
-      body: FondoApp(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final double anchoPantalla = constraints.maxWidth;
-            final double cardLeft = (anchoPantalla - _cardWidth) / 2;
-            final double cardBottom = _cardTop + _cardHeight;
+    return FondoApp(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double anchoPantalla = constraints.maxWidth;
+          final double cardLeft = (anchoPantalla - _cardWidth) / 2;
+          final double cardBottom = _cardTop + _cardHeight;
 
-            return SizedBox(
-              width: double.infinity,
-              height: double.infinity,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 55,
-                    child: Text(
-                      "No. pasaporte",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: ColoresDocente.textoOscuro,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
+          return SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 55,
+                  child: Text(
+                    "No. pasaporte",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: ColoresDocente.textoOscuro,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
                     ),
                   ),
+                ),
 
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: 80,
-                    child: Text(
-                      _numeroUsuario,
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.doto(
-                        color: ColoresDocente.textoOscuro,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 27,
-                      ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 80,
+                  child: Text(
+                    _numeroUsuario,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.doto(
+                      color: ColoresDocente.textoOscuro,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 27,
                     ),
                   ),
+                ),
 
-                  Positioned(
-                    left: cardLeft,
-                    top: _cardTop,
-                    width: _cardWidth,
-                    height: _cardHeight,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade300),
-                      ),
+                Positioned(
+                  left: cardLeft,
+                  top: _cardTop,
+                  width: _cardWidth,
+                  height: _cardHeight,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade300),
                     ),
                   ),
+                ),
 
-                  Positioned(
-                    left: cardLeft,
-                    top: _cardTop + 34,
-                    width: _cardWidth,
-                    child: const Text(
-                      "PÁGINA DE \nIDENTIFICACIÓN",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: ColoresDocente.textoOscuro,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 23,
-                      ),
+                Positioned(
+                  left: cardLeft,
+                  top: _cardTop + 34,
+                  width: _cardWidth,
+                  child: const Text(
+                    "PÁGINA DE \nIDENTIFICACIÓN",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: ColoresDocente.textoOscuro,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 23,
                     ),
                   ),
+                ),
 
-                  Positioned(
-                    left: cardLeft + 27,
-                    top: _cardTop + 135,
-                    width: 90,
-                    height: 136,
-                    child: GestureDetector(
-                      onTap: _cambiarFoto,
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: SizedBox(
-                              width: 90,
-                              height: 136,
-                              child: (_fotoUrl == null || _fotoUrl!.isEmpty)
-                                  ? Container(
+                Positioned(
+                  left: cardLeft + 27,
+                  top: _cardTop + 135,
+                  width: 90,
+                  height: 136,
+                  child: GestureDetector(
+                    onTap: _cambiarFoto,
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 90,
+                            height: 136,
+                            child: (_fotoUrl == null || _fotoUrl!.isEmpty)
+                                ? Container(
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Image.network(
+                                    _fotoUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
                                       color: Colors.grey.shade300,
                                       child: const Icon(
                                         Icons.person,
                                         size: 60,
                                         color: Colors.white,
                                       ),
-                                    )
-                                  : Image.network(
-                                      _fotoUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        color: Colors.grey.shade300,
-                                        child: const Icon(
-                                          Icons.person,
-                                          size: 60,
-                                          color: Colors.white,
-                                        ),
-                                      ),
                                     ),
+                                  ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 4,
+                          bottom: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: ColoresDocente.textoOscuro,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 14,
+                              color: Colors.white,
                             ),
                           ),
-                          Positioned(
-                            right: 4,
-                            bottom: 4,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: ColoresDocente.textoOscuro,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                size: 14,
-                                color: Colors.white,
-                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 134,
+                  top: _cardTop + 135,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Notificaciones",
+                        style: TextStyle(
+                          color: ColoresDocente.textoOscuro,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      const BotonNotificaciones(),
+                    ],
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 27,
+                  top: _cardTop + 300,
+                  child: const Text(
+                    "Nombre",
+                    style: TextStyle(
+                      color: ColoresDocente.textoOscuro,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: cardLeft + 27,
+                  top: _cardTop + 326,
+                  width: 282,
+                  child: Text(
+                    _nombre,
+                    style: const TextStyle(
+                      color: ColoresDocente.textoAzul,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 27,
+                  top: _cardTop + 367,
+                  child: const Text(
+                    "División",
+                    style: TextStyle(
+                      color: ColoresDocente.textoOscuro,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: cardLeft + 27,
+                  top: _cardTop + 393,
+                  width: 282,
+                  child: Text(
+                    _division,
+                    style: const TextStyle(
+                      color: ColoresDocente.textoAzul,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 34,
+                  top: _cardTop + 444,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.emoji_events,
+                            color: ColoresDocente.verdeAcento,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            "Logros\nobtenidos",
+                            style: TextStyle(
+                              color: ColoresDocente.textoOscuro,
+                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 134,
-                    top: _cardTop + 135,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Notificaciones",
-                          style: TextStyle(
-                            color: ColoresDocente.textoOscuro,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const BotonNotificaciones(),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 27,
-                    top: _cardTop + 300,
-                    child: const Text(
-                      "Nombre",
-                      style: TextStyle(
-                        color: ColoresDocente.textoOscuro,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: cardLeft + 27,
-                    top: _cardTop + 326,
-                    width: 282,
-                    child: Text(
-                      _nombre,
-                      style: const TextStyle(
-                        color: ColoresDocente.textoAzul,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 27,
-                    top: _cardTop + 367,
-                    child: const Text(
-                      "División",
-                      style: TextStyle(
-                        color: ColoresDocente.textoOscuro,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: cardLeft + 27,
-                    top: _cardTop + 393,
-                    width: 282,
-                    child: Text(
-                      _division,
-                      style: const TextStyle(
-                        color: ColoresDocente.textoAzul,
-                        fontSize: 17,
-                      ),
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 34,
-                    top: _cardTop + 444,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.emoji_events,
-                              color: ColoresDocente.verdeAcento,
-                              size: 28,
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              "Logros\nobtenidos",
-                              style: TextStyle(
-                                color: ColoresDocente.textoOscuro,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "$_logrosObtenidos",
-                          style: const TextStyle(
-                            color: ColoresDocente.textoOscuro,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 28,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 175,
-                    top: _cardTop + 443,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.menu_book,
-                              color: ColoresDocente.verdeAcento,
-                              size: 28,
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              "Cursos\ncompletados",
-                              style: TextStyle(
-                                color: ColoresDocente.textoOscuro,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "$_cursosCompletados",
-                          style: const TextStyle(
-                            color: ColoresDocente.textoOscuro,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 28,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 34,
-                    top: _cardTop + 556,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              color: ColoresDocente.verdeAcento,
-                              size: 26,
-                            ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              "Nivel",
-                              style: TextStyle(
-                                color: ColoresDocente.textoOscuro,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _nivel,
-                          style: const TextStyle(
-                            color: ColoresDocente.textoOscuro,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 21,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + 177,
-                    top: _cardTop + 540,
-                    width: 108,
-                    child: Image.asset(
-                      "assets/sello_soy_ut.png",
-                      errorBuilder: (_, __, ___) => const SizedBox(),
-                    ),
-                  ),
-
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    top: cardBottom + 35,
-                    child: const Text(
-                      "Página 1",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: ColoresDocente.textoOscuro,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-
-                  Positioned(
-                    left: cardLeft + _cardWidth - 40,
-                    top: cardBottom + 25,
-                    child: InkWell(
-                      onTap: () => setState(() => _menuAbierto = !_menuAbierto),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: const BoxDecoration(
+                      const SizedBox(height: 4),
+                      Text(
+                        "$_logrosObtenidos",
+                        style: const TextStyle(
                           color: ColoresDocente.textoOscuro,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.menu,
-                          color: Colors.white,
-                          size: 20,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 175,
+                  top: _cardTop + 443,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.menu_book,
+                            color: ColoresDocente.verdeAcento,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            "Cursos\ncompletados",
+                            style: TextStyle(
+                              color: ColoresDocente.textoOscuro,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "$_cursosCompletados",
+                        style: const TextStyle(
+                          color: ColoresDocente.textoOscuro,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 34,
+                  top: _cardTop + 556,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: ColoresDocente.verdeAcento,
+                            size: 26,
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            "Nivel",
+                            style: TextStyle(
+                              color: ColoresDocente.textoOscuro,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _nivel,
+                        style: const TextStyle(
+                          color: ColoresDocente.textoOscuro,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 21,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Positioned(
+                  left: cardLeft + 177,
+                  top: _cardTop + 540,
+                  width: 108,
+                  child: Image.asset(
+                    "assets/sello_soy_ut.png",
+                    errorBuilder: (_, __, ___) => const SizedBox(),
+                  ),
+                ),
+
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: cardBottom + 35,
+                  child: const Text(
+                    "Página 1",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: ColoresDocente.textoOscuro,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
                     ),
                   ),
-
-                  if (_menuAbierto)
-                    Positioned(
-                      left: 16,
-                      right: 16,
-                      bottom: 24,
-                      child: MenuInferior(
-                        pantallaActiva: "Inicio",
-                        onCerrar: () => setState(() => _menuAbierto = false),
-                        onSeleccionar: (pantalla) {
-                          setState(() => _menuAbierto = false);
-                          // TODO: navegar a la pantalla correspondiente cuando existan
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

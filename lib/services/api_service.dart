@@ -134,6 +134,39 @@ class ApiService {
     );
   }
 
+  Future<Map<String, dynamic>> obtenerMisSellos(int idDocente) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/docentes/$idDocente/sellos"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos;
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener sellos");
+    }
+  }
+
+  Future<Map<String, dynamic>> obtenerDetalleSello(
+    int idDocente,
+    int idSello,
+  ) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/docentes/$idDocente/sellos/$idSello/detalle"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos;
+    } else {
+      throw Exception(
+        datos["detail"] ?? "Error al obtener el detalle del sello",
+      );
+    }
+  }
+
   // Ejemplo de cómo se verán las demás llamadas, ya con el token incluido
   Future<List<dynamic>> obtenerCursos() async {
     final token = await AuthStorage.obtenerToken();

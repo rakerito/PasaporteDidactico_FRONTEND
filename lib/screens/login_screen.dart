@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import 'admin/admin_home_screen.dart';
-import 'docente/docente_home_screen.dart';
+import 'docente/docente_shell.dart';
 import 'welcome_screen.dart';
 
 /// Mismas medidas del lienzo de Canva que usamos en splash_screen.dart —
@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
             nombre: nombre,
             siguiente: categoria == "admin"
                 ? const AdminHomeScreen()
-                : const DocenteHomeScreen(),
+                : const DocenteShell(),
           ),
         ),
         (route) => false,
@@ -242,7 +242,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   top: 535,
                   width: _anchoDiseno,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      // TODO: pantalla de recuperar contraseña
+                    },
                     child: Text(
                       "¿Olvidaste tu contraseña?",
                       style: TextStyle(
