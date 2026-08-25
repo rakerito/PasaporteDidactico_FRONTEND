@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
+import '../../services/cache_app.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/modal_detalle_sello.dart';
 import '../../widgets/campo_busqueda.dart';
@@ -60,7 +61,15 @@ class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
   @override
   void initState() {
     super.initState();
-    _cargar();
+    if (CacheApp.sellos != null) {
+      final d = CacheApp.sellos!;
+      _idDocente = d["idDocente"];
+      _obtenidos = d["obtenidos"];
+      _noObtenidos = d["noObtenidos"];
+      _cargando = false;
+    } else {
+      _cargar();
+    }
   }
 
   Future<void> _cargar() async {
@@ -74,13 +83,23 @@ class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
       }
 
       final datos = await _apiService.obtenerMisSellos(docente["id_docente"]);
+
+      final datosNuevos = {
+        "idDocente": docente["id_docente"],
+        "obtenidos": datos["obtenidos"] ?? [],
+        "noObtenidos": datos["no_obtenidos"] ?? [],
+      };
+      CacheApp.sellos = datosNuevos;
+
+      if (!mounted) return;
       setState(() {
-        _idDocente = docente["id_docente"];
-        _obtenidos = datos["obtenidos"] ?? [];
-        _noObtenidos = datos["no_obtenidos"] ?? [];
+        _idDocente = datosNuevos["idDocente"] as int?;
+        _obtenidos = datosNuevos["obtenidos"] as List;
+        _noObtenidos = datosNuevos["noObtenidos"] as List;
         _cargando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst("Exception: ", "");
         _cargando = false;

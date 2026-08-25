@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:page_flip/page_flip.dart';
 
 import '../../widgets/menu_inferior.dart';
 import 'docente_home_screen.dart';
@@ -7,9 +8,6 @@ import 'progreso_docente_screen.dart';
 import 'cursos_docente_screen.dart';
 import 'configuracion_docente_screen.dart';
 
-/// Contenedor único que mantiene las pantallas del docente en memoria
-/// UNA VEZ QUE LAS VISITAS (no se cargan las 5 de golpe al entrar,
-/// solo la de Inicio; las demás se crean la primera vez que las abres).
 class DocenteShell extends StatefulWidget {
   const DocenteShell({super.key});
 
@@ -18,6 +16,9 @@ class DocenteShell extends StatefulWidget {
 }
 
 class _DocenteShellState extends State<DocenteShell> {
+  final GlobalKey<PageFlipWidgetState> _pageFlipKey =
+      GlobalKey<PageFlipWidgetState>();
+
   int _indiceActual = 0;
   bool _menuAbierto = false;
 
@@ -29,42 +30,25 @@ class _DocenteShellState extends State<DocenteShell> {
     "Configuración",
   ];
 
-  final Set<int> _visitadas = {0};
-  final List<Widget?> _cache = List<Widget?>.filled(5, null);
-
-  Widget _obtenerPantalla(int indice) {
-    if (_cache[indice] != null) return _cache[indice]!;
-
-    final Widget pantalla;
-    switch (indice) {
-      case 0:
-        pantalla = const DocenteHomeScreen();
-        break;
-      case 1:
-        pantalla = const SellosDocenteScreen();
-        break;
-      case 2:
-        pantalla = const ProgresoDocenteScreen();
-        break;
-      case 3:
-        pantalla = const CursosDocenteScreen();
-        break;
-      default:
-        pantalla = const ConfiguracionDocenteScreen();
-    }
-
-    _cache[indice] = pantalla;
-    return pantalla;
-  }
+  // Con este paquete no tenemos garantía de un aviso al deslizar,
+  // así que precargamos TODAS las pantallas de una vez (no hay carga perezosa aquí).
+  // Si sientes que tarda al entrar, dímelo y retomamos la optimización de precarga
+  // que dejamos pendiente en la lista de pendientes del proyecto.
+  final List<Widget> _pantallas = const [
+    DocenteHomeScreen(),
+    SellosDocenteScreen(),
+    ProgresoDocenteScreen(),
+    CursosDocenteScreen(),
+    ConfiguracionDocenteScreen(),
+  ];
 
   void _irAPantalla(String nombre) {
     setState(() => _menuAbierto = false);
     final nuevoIndice = _nombresPantallas.indexOf(nombre);
-    if (nuevoIndice == -1 || nuevoIndice == _indiceActual) return;
-    setState(() {
-      _visitadas.add(nuevoIndice);
-      _indiceActual = nuevoIndice;
-    });
+    if (nuevoIndice == -1) return;
+
+    setState(() => _indiceActual = nuevoIndice);
+    _pageFlipKey.currentState?.goToPage(nuevoIndice);
   }
 
   @override
@@ -72,14 +56,10 @@ class _DocenteShellState extends State<DocenteShell> {
     return Scaffold(
       body: Stack(
         children: [
-          IndexedStack(
-            index: _indiceActual,
-            children: List.generate(
-              5,
-              (i) => _visitadas.contains(i)
-                  ? _obtenerPantalla(i)
-                  : const SizedBox.shrink(),
-            ),
+          PageFlipWidget(
+            key: _pageFlipKey,
+            backgroundColor: Colors.white,
+            children: _pantallas,
           ),
 
           Positioned(

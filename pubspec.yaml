@@ -40,6 +40,8 @@ dependencies:
   flutter_secure_storage: ^11.0.0
   google_fonts: ^8.2.1
   image_picker: ^1.2.3
+  flip_curl_animation_widget: ^0.1.0
+  page_flip: ^0.2.5+1
 
 dev_dependencies:
   flutter_test:

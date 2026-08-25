@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
+import '../../services/cache_app.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/modal_detalle_curso.dart';
 import '../../widgets/campo_busqueda.dart';
@@ -26,7 +27,12 @@ class _CursosDocenteScreenState extends State<CursosDocenteScreen> {
   @override
   void initState() {
     super.initState();
-    _cargarCursos();
+    if (CacheApp.cursos != null) {
+      _cursos = CacheApp.cursos!;
+      _cargando = false;
+    } else {
+      _cargarCursos();
+    }
     _buscadorController.addListener(() {
       setState(() {});
     });
@@ -39,11 +45,15 @@ class _CursosDocenteScreenState extends State<CursosDocenteScreen> {
     });
     try {
       final cursos = await _apiService.obtenerCursosActivos();
+      CacheApp.cursos = cursos;
+
+      if (!mounted) return;
       setState(() {
         _cursos = cursos;
         _cargando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _cargando = false;

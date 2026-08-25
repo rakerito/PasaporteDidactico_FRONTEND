@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
+import '../../services/cache_app.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/modal_detalle_curso.dart';
 import '../../widgets/campo_busqueda.dart';
@@ -61,7 +62,18 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
   @override
   void initState() {
     super.initState();
-    _cargar();
+    if (CacheApp.progreso != null) {
+      final d = CacheApp.progreso!;
+      _cursando = d["cursando"];
+      _completados = d["completados"];
+      _avanceGeneral = d["avanceGeneral"];
+      _totalCursos = d["totalCursos"];
+      _totalConstancias = d["totalConstancias"];
+      _totalSellos = d["totalSellos"];
+      _cargando = false;
+    } else {
+      _cargar();
+    }
   }
 
   Future<void> _cargar() async {
@@ -73,26 +85,41 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
         throw Exception("Este usuario no tiene perfil de docente.");
       }
       final datos = await _apiService.obtenerProgreso(docente["id_docente"]);
-      setState(() {
-        _cursando = datos["cursando"] ?? [];
-        _completados = datos["completados"] ?? [];
 
-        if (_cursando.isNotEmpty) {
-          int sumaProgreso = 0;
-          for (var c in _cursando) {
-            sumaProgreso += int.tryParse(c["progreso"]?.toString() ?? "0") ?? 0;
-          }
-          _avanceGeneral = (sumaProgreso / _cursando.length).round();
-        } else {
-          _avanceGeneral = 0;
+      final cursandoLista = datos["cursando"] ?? [];
+      final completadosLista = datos["completados"] ?? [];
+
+      int avance = 0;
+      if (cursandoLista.isNotEmpty) {
+        int sumaProgreso = 0;
+        for (var c in cursandoLista) {
+          sumaProgreso += int.tryParse(c["progreso"]?.toString() ?? "0") ?? 0;
         }
+        avance = (sumaProgreso / cursandoLista.length).round();
+      }
 
-        _totalCursos = (datos["total_cursos"] ?? 0).toInt();
-        _totalConstancias = (datos["total_constancias"] ?? 0).toInt();
-        _totalSellos = (datos["total_sellos"] ?? 0).toInt();
+      final datosNuevos = {
+        "cursando": cursandoLista,
+        "completados": completadosLista,
+        "avanceGeneral": avance,
+        "totalCursos": (datos["total_cursos"] ?? 0).toInt(),
+        "totalConstancias": (datos["total_constancias"] ?? 0).toInt(),
+        "totalSellos": (datos["total_sellos"] ?? 0).toInt(),
+      };
+      CacheApp.progreso = datosNuevos;
+
+      if (!mounted) return;
+      setState(() {
+        _cursando = datosNuevos["cursando"] as List;
+        _completados = datosNuevos["completados"] as List;
+        _avanceGeneral = datosNuevos["avanceGeneral"] as int;
+        _totalCursos = datosNuevos["totalCursos"] as int;
+        _totalConstancias = datosNuevos["totalConstancias"] as int;
+        _totalSellos = datosNuevos["totalSellos"] as int;
         _cargando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString().replaceFirst("Exception: ", "");
         _cargando = false;

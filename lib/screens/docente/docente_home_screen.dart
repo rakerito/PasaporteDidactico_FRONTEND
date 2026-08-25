@@ -6,6 +6,7 @@ import 'dart:io';
 
 import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
+import '../../services/cache_app.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/boton_notificaciones.dart';
 import '../login_screen.dart';
@@ -47,7 +48,23 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _cargarDatos();
+    if (CacheApp.docenteHome != null) {
+      _aplicarDatos(CacheApp.docenteHome!);
+      _cargando = false;
+    } else {
+      _cargarDatos();
+    }
+  }
+
+  void _aplicarDatos(Map<String, dynamic> d) {
+    _nombre = d["nombre"];
+    _numeroUsuario = d["numeroUsuario"];
+    _division = d["division"];
+    _fotoUrl = d["fotoUrl"];
+    _idDocente = d["idDocente"];
+    _logrosObtenidos = d["logrosObtenidos"];
+    _cursosCompletados = d["cursosCompletados"];
+    _nivel = d["nivel"];
   }
 
   Future<void> _cargarDatos() async {
@@ -77,20 +94,27 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
         );
       }
 
-      setState(() {
-        _nombre = "${usuario["nombre"]} ${usuario["apellidos"]}";
-        _numeroUsuario = usuario["numero_usuario"] ?? "Sin número asignado";
-        _division =
+      final datosNuevos = {
+        "nombre": "${usuario["nombre"]} ${usuario["apellidos"]}",
+        "numeroUsuario": usuario["numero_usuario"] ?? "Sin número asignado",
+        "division":
             docente?["division"] ??
-            "Sin división asignada (no tiene perfil de docente)";
-        _fotoUrl = docente?["foto_url"];
-        _idDocente = docente?["id_docente"];
-        _logrosObtenidos = estadisticas?["logros_obtenidos"] ?? 0;
-        _cursosCompletados = estadisticas?["cursos_completados"] ?? 0;
-        _nivel = estadisticas?["nivel"] ?? "Básico";
+            "Sin división asignada (no tiene perfil de docente)",
+        "fotoUrl": docente?["foto_url"],
+        "idDocente": docente?["id_docente"],
+        "logrosObtenidos": estadisticas?["logros_obtenidos"] ?? 0,
+        "cursosCompletados": estadisticas?["cursos_completados"] ?? 0,
+        "nivel": estadisticas?["nivel"] ?? "Básico",
+      };
+      CacheApp.docenteHome = datosNuevos;
+
+      if (!mounted) return;
+      setState(() {
+        _aplicarDatos(datosNuevos);
         _cargando = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorCarga = e.toString().replaceFirst("Exception: ", "");
         _cargando = false;
@@ -113,6 +137,9 @@ class _DocenteHomeScreenState extends State<DocenteHomeScreen> {
         _idDocente!,
         File(imagenSeleccionada.path),
       );
+      if (CacheApp.docenteHome != null) {
+        CacheApp.docenteHome!["fotoUrl"] = nuevaUrl;
+      }
       setState(() => _fotoUrl = nuevaUrl);
     } catch (e) {
       if (mounted) {
