@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/menu_inferior.dart';
-import 'cursos_docente_screen.dart';
 import 'docente_home_screen.dart';
-import 'progreso_docente_screen.dart';
 import 'sellos_docente_screen.dart';
+import 'progreso_docente_screen.dart';
+import 'cursos_docente_screen.dart';
+import 'configuracion_docente_screen.dart';
 
 /// Contenedor único que mantiene las pantallas del docente en memoria
 /// UNA VEZ QUE LAS VISITAS (no se cargan las 5 de golpe al entrar,
@@ -28,7 +29,6 @@ class _DocenteShellState extends State<DocenteShell> {
     "Configuración",
   ];
 
-  // Empieza con solo el índice 0 (Inicio) "visitado" — las demás se crean después.
   final Set<int> _visitadas = {0};
   final List<Widget?> _cache = List<Widget?>.filled(5, null);
 
@@ -50,7 +50,7 @@ class _DocenteShellState extends State<DocenteShell> {
         pantalla = const CursosDocenteScreen();
         break;
       default:
-        pantalla = const _PantallaProximamente(nombre: "Configuración");
+        pantalla = const ConfiguracionDocenteScreen();
     }
 
     _cache[indice] = pantalla;
@@ -74,8 +74,6 @@ class _DocenteShellState extends State<DocenteShell> {
         children: [
           IndexedStack(
             index: _indiceActual,
-            // Las pantallas NO visitadas todavía son solo un SizedBox vacío
-            // (no gastan memoria ni hacen peticiones al backend hasta que las abras).
             children: List.generate(
               5,
               (i) => _visitadas.contains(i)
@@ -113,23 +111,6 @@ class _DocenteShellState extends State<DocenteShell> {
               ),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _PantallaProximamente extends StatelessWidget {
-  final String nombre;
-  const _PantallaProximamente({required this.nombre});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text(
-          "$nombre — próximamente",
-          style: const TextStyle(fontSize: 16),
-        ),
       ),
     );
   }

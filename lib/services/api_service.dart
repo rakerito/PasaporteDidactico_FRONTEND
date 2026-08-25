@@ -12,6 +12,11 @@ class ApiService {
   // - iOS Simulator: http://localhost:8000
   static const String baseUrl = "http://192.168.1.71:8000";
 
+  Future<Map<String, String>> _getHeaders() async {
+    final token = await AuthStorage.obtenerToken();
+    return {"Authorization": "Bearer $token"};
+  }
+
   Future<Map<String, dynamic>> login(String correo, String contrasena) async {
     final respuesta = await http.post(
       Uri.parse("$baseUrl/auth/login"),
@@ -181,7 +186,6 @@ class ApiService {
     }
   }
 
-  // Ejemplo de cómo se verán las demás llamadas, ya con el token incluido
   Future<List<dynamic>> obtenerCursos() async {
     final token = await AuthStorage.obtenerToken();
 
@@ -197,10 +201,12 @@ class ApiService {
     } else {
       throw Exception(datos["detail"] ?? "Error al obtener cursos");
     }
+  }
+
   // ---------------------------------------------------------
   // ENDPOINTS DE CURSOS
   // ---------------------------------------------------------
-  
+
   /// Obtiene la lista de cursos con estatus activo
   Future<List<dynamic>> obtenerCursosActivos() async {
     final response = await http.get(

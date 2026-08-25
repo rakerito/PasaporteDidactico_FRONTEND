@@ -4,19 +4,12 @@ import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/modal_detalle_sello.dart';
+import '../../widgets/campo_busqueda.dart';
+import '../../widgets/boton_filtros.dart';
 
 class ColoresSellos {
   static const Color textoOscuro = Color(0xFF151B3D);
   static const Color botonClaro = Color(0xFF80A0CF);
-}
-
-enum FiltroSellos { todos, obtenidos, noObtenidos }
-
-class SellosDocenteScreen extends StatefulWidget {
-  const SellosDocenteScreen({super.key});
-
-  @override
-  State<SellosDocenteScreen> createState() => _SellosDocenteScreenState();
 }
 
 const _meses = [
@@ -43,6 +36,13 @@ String _formatearFecha(String fechaIso) {
   }
 }
 
+class SellosDocenteScreen extends StatefulWidget {
+  const SellosDocenteScreen({super.key});
+
+  @override
+  State<SellosDocenteScreen> createState() => _SellosDocenteScreenState();
+}
+
 class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
   final _apiService = ApiService();
   final _buscadorController = TextEditingController();
@@ -53,7 +53,9 @@ class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
   int? _idDocente;
   List<dynamic> _obtenidos = [];
   List<dynamic> _noObtenidos = [];
-  FiltroSellos _filtro = FiltroSellos.todos;
+
+  // null = todos, "obtenidos", "no_obtenidos"
+  String? _filtroEstado;
 
   @override
   void initState() {
@@ -94,6 +96,100 @@ class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
           (s) => (s["nombre"] ?? "").toString().toLowerCase().contains(texto),
         )
         .toList();
+  }
+
+  int get _filtrosActivos => _filtroEstado != null ? 1 : 0;
+
+  Future<void> _abrirFiltros() async {
+    String? filtroTemp = _filtroEstado;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        "Filtros",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: ColoresSellos.textoOscuro,
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => setModalState(() => filtroTemp = null),
+                        child: const Text("Limpiar"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Estado",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text("Todos"),
+                        selected: filtroTemp == null,
+                        onSelected: (_) =>
+                            setModalState(() => filtroTemp = null),
+                      ),
+                      ChoiceChip(
+                        label: const Text("Obtenidos"),
+                        selected: filtroTemp == "obtenidos",
+                        onSelected: (_) =>
+                            setModalState(() => filtroTemp = "obtenidos"),
+                      ),
+                      ChoiceChip(
+                        label: const Text("No obtenidos"),
+                        selected: filtroTemp == "no_obtenidos",
+                        onSelected: (_) =>
+                            setModalState(() => filtroTemp = "no_obtenidos"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ColoresSellos.textoOscuro,
+                      ),
+                      onPressed: () {
+                        setState(() => _filtroEstado = filtroTemp);
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Aplicar filtros"),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Widget _tarjetaSello(Map<String, dynamic> sello, {required bool obtenido}) {
@@ -243,8 +339,8 @@ class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
 
     final obtenidosFiltrados = _filtrarPorBusqueda(_obtenidos);
     final noObtenidosFiltrados = _filtrarPorBusqueda(_noObtenidos);
-    final mostrarObtenidos = _filtro != FiltroSellos.noObtenidos;
-    final mostrarNoObtenidos = _filtro != FiltroSellos.obtenidos;
+    final mostrarObtenidos = _filtroEstado != "no_obtenidos";
+    final mostrarNoObtenidos = _filtroEstado != "obtenidos";
 
     return FondoApp(
       child: SafeArea(
@@ -267,66 +363,21 @@ class _SellosDocenteScreenState extends State<SellosDocenteScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Buscador
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextField(
+                  child: CampoBusqueda(
                     controller: _buscadorController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: "Buscar sello",
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _buscadorController.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () =>
-                                  setState(() => _buscadorController.clear()),
-                            ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
+                    hint: "Buscar sello",
+                    onChanged: () => setState(() {}),
                   ),
                 ),
                 const SizedBox(height: 12),
 
-                // Filtros
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<FiltroSellos>(
-                        value: _filtro,
-                        isExpanded: true,
-                        icon: const Icon(Icons.filter_list),
-                        items: const [
-                          DropdownMenuItem(
-                            value: FiltroSellos.todos,
-                            child: Text("Todos"),
-                          ),
-                          DropdownMenuItem(
-                            value: FiltroSellos.obtenidos,
-                            child: Text("Obtenidos"),
-                          ),
-                          DropdownMenuItem(
-                            value: FiltroSellos.noObtenidos,
-                            child: Text("No obtenidos"),
-                          ),
-                        ],
-                        onChanged: (v) =>
-                            setState(() => _filtro = v ?? FiltroSellos.todos),
-                      ),
-                    ),
+                  child: BotonFiltros(
+                    activos: _filtrosActivos,
+                    onTap: _abrirFiltros,
                   ),
                 ),
                 const SizedBox(height: 24),

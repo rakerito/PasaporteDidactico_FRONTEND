@@ -6,6 +6,8 @@ import '../../services/auth_storage.dart';
 import '../../services/api_service.dart';
 import '../../widgets/fondo_app.dart';
 import '../../widgets/modal_detalle_curso.dart';
+import '../../widgets/campo_busqueda.dart';
+import '../../widgets/boton_filtros.dart';
 
 const _mesesProgreso = [
   "ENE",
@@ -52,6 +54,9 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
   int _totalSellos = 0;
   List<dynamic> _cursando = [];
   List<dynamic> _completados = [];
+
+  // null = todos, "cursando", "completados"
+  String? _filtroEstado;
 
   @override
   void initState() {
@@ -105,6 +110,100 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
         .toList();
   }
 
+  int get _filtrosActivos => _filtroEstado != null ? 1 : 0;
+
+  Future<void> _abrirFiltros() async {
+    String? filtroTemp = _filtroEstado;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        "Filtros",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF151B3D),
+                        ),
+                      ),
+                      const Spacer(),
+                      TextButton(
+                        onPressed: () => setModalState(() => filtroTemp = null),
+                        child: const Text("Limpiar"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Estado",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      ChoiceChip(
+                        label: const Text("Todos"),
+                        selected: filtroTemp == null,
+                        onSelected: (_) =>
+                            setModalState(() => filtroTemp = null),
+                      ),
+                      ChoiceChip(
+                        label: const Text("Cursando"),
+                        selected: filtroTemp == "cursando",
+                        onSelected: (_) =>
+                            setModalState(() => filtroTemp = "cursando"),
+                      ),
+                      ChoiceChip(
+                        label: const Text("Completados"),
+                        selected: filtroTemp == "completados",
+                        onSelected: (_) =>
+                            setModalState(() => filtroTemp = "completados"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF151B3D),
+                      ),
+                      onPressed: () {
+                        setState(() => _filtroEstado = filtroTemp);
+                        Navigator.pop(context);
+                      },
+                      child: const Text("Aplicar filtros"),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_cargando) {
@@ -140,8 +239,12 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
       );
     }
 
-    final cursandoFiltrado = _filtrar(_cursando);
-    final completadosFiltrado = _filtrar(_completados);
+    final cursandoFiltrado = _filtroEstado == "completados"
+        ? []
+        : _filtrar(_cursando);
+    final completadosFiltrado = _filtroEstado == "cursando"
+        ? []
+        : _filtrar(_completados);
 
     return FondoApp(
       child: SafeArea(
@@ -164,29 +267,21 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Buscador
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TextField(
+                  child: CampoBusqueda(
                     controller: _buscadorController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: "Buscar curso",
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _buscadorController.text.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () =>
-                                  setState(() => _buscadorController.clear()),
-                            ),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
+                    hint: "Buscar curso",
+                    onChanged: () => setState(() {}),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: BotonFiltros(
+                    activos: _filtrosActivos,
+                    onTap: _abrirFiltros,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -261,7 +356,6 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Cursando
                 if (cursandoFiltrado.isNotEmpty) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
@@ -290,7 +384,6 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
                   const SizedBox(height: 24),
                 ],
 
-                // Completados
                 if (completadosFiltrado.isNotEmpty) ...[
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20),
@@ -339,10 +432,6 @@ class _ProgresoDocenteScreenState extends State<ProgresoDocenteScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Gauge semicircular
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _GaugeSemicircular extends StatelessWidget {
   final int porcentaje;
   const _GaugeSemicircular({required this.porcentaje});
@@ -384,10 +473,10 @@ class _GaugeSemicircular extends StatelessWidget {
             ),
             if (porcentaje > 0)
               Positioned(
-                left: tipX - 16, // Centro del icono (tamaño 32)
+                left: tipX - 16,
                 top: tipY - 16,
                 child: Transform.rotate(
-                  angle: sweepAngle - math.pi / 20, // Girar para que el avión siga la curva tangencial
+                  angle: sweepAngle - math.pi / 20,
                   child: const Icon(
                     Icons.flight,
                     size: 40,
@@ -413,7 +502,6 @@ class _GaugePainter extends CustomPainter {
     const startAngle = math.pi;
     const sweepAngle = math.pi;
 
-    // Track (fondo verde-lima)
     final trackPaint = Paint()
       ..color = const Color(0xFFB5CC3A)
       ..style = PaintingStyle.stroke
@@ -427,7 +515,6 @@ class _GaugePainter extends CustomPainter {
       trackPaint,
     );
 
-    // Fill (azul oscuro)
     if (porcentaje > 0) {
       final fillPaint = Paint()
         ..color = const Color(0xFF151B3D)
@@ -448,10 +535,6 @@ class _GaugePainter extends CustomPainter {
   @override
   bool shouldRepaint(_GaugePainter old) => old.porcentaje != porcentaje;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Stat box
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _StatBox extends StatelessWidget {
   final int valor;
@@ -499,10 +582,6 @@ class _StatBox extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tarjeta de curso en progreso
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _TarjetaCursando extends StatelessWidget {
   final Map<String, dynamic> curso;
@@ -598,7 +677,6 @@ class _BarraAvion extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Reserva ~56px para el texto del porcentaje a la derecha
         final double totalWidth = constraints.maxWidth - 56;
         final double fillWidth = totalWidth * progreso / 100;
         const double avionSize = 20.0;
@@ -614,7 +692,6 @@ class _BarraAvion extends StatelessWidget {
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // Fondo de barra
                   Container(
                     height: 10,
                     decoration: BoxDecoration(
@@ -622,7 +699,6 @@ class _BarraAvion extends StatelessWidget {
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
-                  // Relleno
                   Container(
                     height: 10,
                     width: fillWidth,
@@ -631,12 +707,11 @@ class _BarraAvion extends StatelessWidget {
                       borderRadius: BorderRadius.circular(5),
                     ),
                   ),
-                  // Avión
                   Positioned(
                     left: avionLeft,
                     top: -5,
                     child: Transform.rotate(
-                      angle: math.pi / 4, // 45 grados (pi/4) hace que Icons.flight apunte exactamente a la derecha
+                      angle: math.pi / 4,
                       child: const Icon(
                         Icons.flight,
                         size: avionSize,
@@ -663,10 +738,6 @@ class _BarraAvion extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tabla de cursos completados
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _TablaCompletados extends StatelessWidget {
   final List<dynamic> completados;
   const _TablaCompletados({required this.completados});
@@ -691,7 +762,6 @@ class _TablaCompletados extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // Encabezado verde
           Container(
             color: const Color(0xFF4A9B7F),
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -720,7 +790,6 @@ class _TablaCompletados extends StatelessWidget {
               ],
             ),
           ),
-          // Filas
           ...completados.map(
             (c) => Container(
               color: const Color(0xFF4A9B7F).withOpacity(0.12),
