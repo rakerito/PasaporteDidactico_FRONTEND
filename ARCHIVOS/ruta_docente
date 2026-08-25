@@ -1,0 +1,80 @@
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.core.dependencias import usuario_actual, solo_admin
+from app.models.docente import crearDocente, actualizarDocente, recuperarDocente, soloDocente, listaDocente
+from app.service import docente_service
+
+router = APIRouter()
+
+
+@router.get("/docentes", response_model=listaDocente, tags=["Docentes"])
+def listar_docentes(usuario: dict = Depends(usuario_actual)):
+    return {"items": docente_service.listar()}
+
+
+@router.get("/docentes/{id_docente}", response_model=soloDocente, tags=["Docentes"])
+def obtener_docente(id_docente: int, usuario: dict = Depends(usuario_actual)):
+    encontrado = docente_service.obtener_por_id(id_docente)
+    if not encontrado:
+        raise HTTPException(status_code=404, detail="Docente no encontrado.")
+    return {"item": encontrado}
+
+
+@router.post("/docentes", response_model=recuperarDocente, tags=["Docentes"])
+def crear_docente(datos: crearDocente, usuario: dict = Depends(solo_admin)):
+    return docente_service.crear(datos.model_dump())
+
+
+@router.put("/docentes/{id_docente}", response_model=recuperarDocente, tags=["Docentes"])
+def actualizar_docente(id_docente: int, datos: actualizarDocente, usuario: dict = Depends(solo_admin)):
+    actualizado = docente_service.actualizar(id_docente, datos.model_dump(exclude_unset=True))
+    if not actualizado:
+        raise HTTPException(status_code=404, detail="Docente no encontrado.")
+    return actualizado
+
+
+@router.delete("/docentes/{id_docente}", tags=["Docentes"])
+def eliminar_docente(id_docente: int, usuario: dict = Depends(solo_admin)):
+    eliminado = docente_service.eliminar(id_docente)
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Docente no encontrado.")
+    return eliminado
+
+@router.get("/docentes/usuario/{id_usuario1}", response_model=soloDocente, tags=["Docentes"])
+def obtener_docente_por_usuario(id_usuario1: int, usuario: dict = Depends(usuario_actual)):
+    encontrado = docente_service.obtener_por_usuario(id_usuario1)
+    if not encontrado:
+        raise HTTPException(status_code=404, detail="Este usuario no tiene perfil de docente.")
+    return {"item": encontrado}
+
+@router.get("/docentes/{id_docente}/estadisticas", tags=["Docentes"])
+def obtener_estadisticas(id_docente: int, usuario: dict = Depends(usuario_actual)):
+    return docente_service.estadisticas(id_docente)
+
+from fastapi import UploadFile, File, HTTPException
+
+@router.post("/docentes/{id_docente}/foto", tags=["Docentes"])
+async def subir_foto_docente(
+    id_docente: int,
+    archivo: UploadFile = File(...),
+    usuario: dict = Depends(usuario_actual),
+):
+    docente = docente_service.obtener_por_id(id_docente)
+    if not docente:
+        raise HTTPException(status_code=404, detail="Docente no encontrado.")
+
+    es_dueño = docente["id_usuario1"] == int(usuario["sub"])
+    es_admin = (usuario.get("categoria") or "").strip().lower() == "admin"
+    if not (es_dueño or es_admin):
+        raise HTTPException(status_code=403, detail="No puedes cambiar la foto de otro docente.")
+
+    contenido = await archivo.read()
+    return docente_service.subir_foto(id_docente, contenido, archivo.filename, archivo.content_type)
+
+@router.get("/docentes/{id_docente}/sellos", tags=["Docentes"])
+def obtener_mis_sellos(id_docente: int, usuario: dict = Depends(usuario_actual)):
+    return docente_service.mis_sellos(id_docente)
+
+@router.get("/docentes/{id_docente}/sellos/{id_sello}/detalle", tags=["Docentes"])
+def obtener_detalle_sello(id_docente: int, id_sello: int, usuario: dict = Depends(usuario_actual)):
+    return docente_service.detalle_sello(id_docente, id_sello)

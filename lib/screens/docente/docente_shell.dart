@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../widgets/menu_inferior.dart';
+import 'cursos_docente_screen.dart';
 import 'docente_home_screen.dart';
+import 'progreso_docente_screen.dart';
 import 'sellos_docente_screen.dart';
 
 /// Contenedor único que mantiene las pantallas del docente en memoria
@@ -42,10 +44,10 @@ class _DocenteShellState extends State<DocenteShell> {
         pantalla = const SellosDocenteScreen();
         break;
       case 2:
-        pantalla = const _PantallaProximamente(nombre: "Progreso");
+        pantalla = const ProgresoDocenteScreen();
         break;
       case 3:
-        pantalla = const _PantallaProximamente(nombre: "Cursos");
+        pantalla = const CursosDocenteScreen();
         break;
       default:
         pantalla = const _PantallaProximamente(nombre: "Configuración");

@@ -167,6 +167,20 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> obtenerProgreso(int idDocente) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/docentes/$idDocente/progreso"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos;
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener el progreso");
+    }
+  }
+
   // Ejemplo de cómo se verán las demás llamadas, ya con el token incluido
   Future<List<dynamic>> obtenerCursos() async {
     final token = await AuthStorage.obtenerToken();
@@ -182,6 +196,37 @@ class ApiService {
       return datos["items"];
     } else {
       throw Exception(datos["detail"] ?? "Error al obtener cursos");
+    }
+  // ---------------------------------------------------------
+  // ENDPOINTS DE CURSOS
+  // ---------------------------------------------------------
+  
+  /// Obtiene la lista de cursos con estatus activo
+  Future<List<dynamic>> obtenerCursosActivos() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/cursos/activos'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      return List<dynamic>.from(decoded);
+    } else {
+      throw Exception('Error al cargar cursos activos: ${response.body}');
+    }
+  }
+
+  /// Obtiene los detalles de un curso en específico (incluyendo requeridos)
+  Future<Map<String, dynamic>> obtenerDetalleCurso(int idCurso) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/cursos/$idCurso/detalle'),
+      headers: await _getHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Error al cargar detalle del curso: ${response.body}');
     }
   }
 }

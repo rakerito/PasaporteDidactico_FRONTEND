@@ -153,6 +153,8 @@ class _ModalDetalleSelloState extends State<_ModalDetalleSello> {
     final constancia = _datos!["constancia"];
     final requeridos = (_datos!["sellos_requeridos"] as List?) ?? [];
     final obtenido = sello["obtenido"] == true;
+    final estatus = sello["estatus"]?.toString() ?? "Inactivo";
+    final esActivo = estatus.toLowerCase() == "activo";
 
     return SingleChildScrollView(
       child: Column(
@@ -186,10 +188,38 @@ class _ModalDetalleSelloState extends State<_ModalDetalleSello> {
           ),
           const SizedBox(height: 20),
 
-          if (constancia != null)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.volunteer_activism,
+                          size: 18,
+                          color: Color(0xFF151B3D),
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          "Otorga",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      constancia != null
+                          ? 'Constancia:\n"${constancia["nombre"] ?? ""}"'
+                          : "Sello",
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              if (obtenido && sello["fecha_completado"] != null)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,54 +227,66 @@ class _ModalDetalleSelloState extends State<_ModalDetalleSello> {
                       const Row(
                         children: [
                           Icon(
-                            Icons.volunteer_activism,
+                            Icons.history,
                             size: 18,
                             color: Color(0xFF151B3D),
                           ),
                           SizedBox(width: 6),
                           Text(
-                            "Otorga",
+                            "Obtenido en",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        'Constancia:\n"${constancia["nombre"] ?? ""}"',
+                        _formatearFecha(sello["fecha_completado"]),
                         style: const TextStyle(fontSize: 13),
                       ),
                     ],
                   ),
                 ),
-                if (obtenido && sello["fecha_completado"] != null)
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(
-                              Icons.history,
-                              size: 18,
-                              color: Color(0xFF151B3D),
+              if (!obtenido)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            esActivo
+                                ? Icons.check_circle_outline
+                                : Icons.cancel_outlined,
+                            size: 18,
+                            color: esActivo
+                                ? Colors.green.shade700
+                                : Colors.red.shade400,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "Estatus",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
                             ),
-                            SizedBox(width: 6),
-                            Text(
-                              "Obtenido en",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        esActivo ? "Activo" : "Inactivo",
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: esActivo
+                              ? Colors.green.shade700
+                              : Colors.red.shade400,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _formatearFecha(sello["fecha_completado"]),
-                          style: const TextStyle(fontSize: 13),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-              ],
-            ),
+                ),
+            ],
+          ),
 
           const SizedBox(height: 20),
 
