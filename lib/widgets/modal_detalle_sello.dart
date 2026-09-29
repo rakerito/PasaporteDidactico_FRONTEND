@@ -265,9 +265,7 @@ class _ModalDetalleSelloState extends State<_ModalDetalleSello> {
                           const SizedBox(width: 6),
                           Text(
                             "Estatus",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),

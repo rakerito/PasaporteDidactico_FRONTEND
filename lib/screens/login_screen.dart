@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../screens/admin/admin_shell.dart';
 import '../services/api_service.dart';
 import '../theme/app_colors.dart';
-import 'admin/admin_home_screen.dart';
+import '../screens/admin/admin_home_screen.dart';
 import 'docente/docente_shell.dart';
 import 'welcome_screen.dart';
 
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (_) => WelcomeScreen(
             nombre: nombre,
             siguiente: categoria == "admin"
-                ? const AdminHomeScreen()
+                ? AdminShell()
                 : const DocenteShell(),
           ),
         ),

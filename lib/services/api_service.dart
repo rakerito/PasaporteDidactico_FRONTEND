@@ -10,7 +10,8 @@ class ApiService {
   // - Emulador Android: http://10.0.2.2:8000
   // - Celular físico en la misma WiFi: http://<IP-de-tu-PC>:8000
   // - iOS Simulator: http://localhost:8000
-  static const String baseUrl = "http://192.168.1.71:8000";
+  //static const String baseUrl = "http://192.168.1.71:8000";
+  static const String baseUrl = "http://127.0.0.1:8000";
 
   Future<Map<String, String>> _getHeaders() async {
     final token = await AuthStorage.obtenerToken();
@@ -233,6 +234,251 @@ class ApiService {
       return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Error al cargar detalle del curso: ${response.body}');
+    }
+  }
+
+  // --------------------------------------------------------------------
+  // ENDPOINTS ADMIN
+  // --------------------------------------------------------------------
+
+  Future<void> primerAcceso(
+    String correo,
+    String noEmpleado,
+    String nuevaContrasena,
+  ) async {
+    final respuesta = await http.post(
+      Uri.parse("$baseUrl/auth/primer-acceso"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "correo": correo,
+        "no_empleado": noEmpleado,
+        "nueva_contrasena": nuevaContrasena,
+      }),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al crear tu contraseña");
+    }
+  }
+
+  Future<Map<String, dynamic>> obtenerReporteMensual() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/admin/reporte-mensual"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos;
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener el reporte mensual");
+    }
+  }
+
+  Future<List<dynamic>> obtenerUsuariosAdmin() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/admin/usuarios"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos["items"];
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener usuarios");
+    }
+  }
+
+  Future<void> crearUsuario(Map<String, dynamic> datos) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.post(
+      Uri.parse("$baseUrl/admin/usuarios"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(datos),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al crear el usuario");
+    }
+  }
+
+  Future<void> actualizarUsuarioAdmin(
+    int idUsuario,
+    Map<String, dynamic> datos,
+  ) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.put(
+      Uri.parse("$baseUrl/usuarios/$idUsuario"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(datos),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al actualizar el usuario");
+    }
+  }
+
+  Future<void> actualizarDocenteAdmin(
+    int idDocente,
+    Map<String, dynamic> datos,
+  ) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.put(
+      Uri.parse("$baseUrl/docentes/$idDocente"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(datos),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al actualizar la división");
+    }
+  }
+
+  Future<void> eliminarUsuarioAdmin(int idUsuario) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.delete(
+      Uri.parse("$baseUrl/admin/usuarios/$idUsuario"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al eliminar el usuario");
+    }
+  }
+
+  Future<void> actualizarUsuarioCompleto(
+    int idUsuario,
+    Map<String, dynamic> datos,
+  ) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.put(
+      Uri.parse("$baseUrl/admin/usuarios/$idUsuario"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(datos),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al actualizar el usuario");
+    }
+  }
+
+  Future<List<dynamic>> obtenerCursosAdmin() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/admin/cursos"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return List<dynamic>.from(datos);
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener cursos");
+    }
+  }
+
+  Future<void> crearCursoAdmin(Map<String, dynamic> datos) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.post(
+      Uri.parse("$baseUrl/admin/cursos"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(datos),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al crear el curso");
+    }
+  }
+
+  Future<void> actualizarCursoAdmin(
+    int idCurso,
+    Map<String, dynamic> datos,
+  ) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.put(
+      Uri.parse("$baseUrl/admin/cursos/$idCurso"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode(datos),
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al actualizar el curso");
+    }
+  }
+
+  Future<void> eliminarCursoAdmin(int idCurso) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.delete(
+      Uri.parse("$baseUrl/admin/cursos/$idCurso"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    if (respuesta.statusCode != 200) {
+      final error = jsonDecode(utf8.decode(respuesta.bodyBytes));
+      throw Exception(error["detail"] ?? "Error al eliminar el curso");
+    }
+  }
+
+  // Catálogos usados en el formulario de curso
+  Future<List<dynamic>> obtenerCatalogoSellos() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/sellos"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos["items"];
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener sellos");
+    }
+  }
+
+  Future<List<dynamic>> obtenerCatalogoCategorias() async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.get(
+      Uri.parse("$baseUrl/categorias"),
+      headers: {"Authorization": "Bearer $token"},
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos["items"];
+    } else {
+      throw Exception(datos["detail"] ?? "Error al obtener categorías");
+    }
+  }
+
+  Future<Map<String, dynamic>> crearCategoria(String nombre) async {
+    final token = await AuthStorage.obtenerToken();
+    final respuesta = await http.post(
+      Uri.parse("$baseUrl/categorias"),
+      headers: {
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"nombre": nombre}),
+    );
+    final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
+    if (respuesta.statusCode == 200) {
+      return datos;
+    } else {
+      throw Exception(datos["detail"] ?? "Error al crear la categoría");
     }
   }
 }
